@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance</title>
+</head>
+<body>
+
+<h1 style="text-align:center;">Face Recognition Attendance</h1>
+
+<div style="text-align:center; margin-bottom:20px;">
+    <button onclick="markAttendance()">Mark Attendance</button>
+</div>
+
+<div class="attendance-list">
+    <table border="1" style="margin:auto; border-collapse: collapse; width:70%; background:white; color:black;">
+        <thead>
+            <tr style="background:#00c6ff;">
+                <th style="padding:10px;">Name</th>
+                <th style="padding:10px;">Date</th>
+                <th style="padding:10px;">Time</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTable">
+            <tr>
+                <td colspan="3">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function markAttendance() {
+        // Replace this with your FACE DETECTION name
+        let name = prompt("Enter detected name:");
+
+        fetch("/mark_attendance_manual/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: "name=" + encodeURIComponent(name)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                updateTable(data.attendances);
+            }
+        });
+    }
+
+    function updateTable(attendances) {
+        let table = document.getElementById("attendanceTable");
+        table.innerHTML = "";
+
+        if (attendances.length === 0) {
+            table.innerHTML = `<tr><td colspan="3">No attendance yet</td></tr>`;
+            return;
+        }
+
+        attendances.forEach(att => {
+            let row = `
+                <tr>
+                    <td>${att.name}</td>
+                    <td>${att.date}</td>
+                    <td>${att.time}</td>
+                </tr>`;
+            table.innerHTML += row;
+        });
+    }
+
+    // Auto refresh every 5 sec
+    setInterval(() => {
+        fetch("/get_attendance/")
+            .then(res => res.json())
+            .then(data => updateTable(data.attendances));
+    }, 5000);
+
+    // CSRF helper
+    function getCSRFToken() {
+        let cookieValue = null;
+        let cookies = document.cookie.split(';');
+
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith('csrftoken=')) {
+                cookieValue = cookie.substring('csrftoken='.length);
+                break;
+            }
+        }
+        return cookieValue;
+    }
+
+    // Load data on page load
+    window.onload = () => {
+        fetch("/get_attendance/")
+            .then(res => res.json())
+            .then(data => updateTable(data.attendances));
+    };
+</script>
+
+</body>
+</html>

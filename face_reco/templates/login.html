@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Detection Attendance</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #232526, #414345);
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        h1 {
+            font-size: 35px;
+        }
+
+        video {
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 3px solid #00ffcc;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            margin: 15px;
+            font-size: 16px;
+            background: #00c6ff;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #00e6ff;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #00ffcc;
+        }
+
+        .attendance-list {
+            margin-top: 30px;
+        }
+
+        li {
+            list-style: none;
+            margin: 5px;
+        }
+
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            display: block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Face Detection Attendance</h1>
+        <p>Click below to mark your attendance</p>
+
+        <button class="btn" onclick="startCamera()">Start Camera</button>
+        <button class="btn" onclick="captureAndSend()">Mark Attendance</button>
+
+        <br>
+        <video id="video" width="500" height="350" autoplay></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <div id="result"></div>
+
+        <div class="attendance-list">
+            <h2>Recent Attendance</h2>
+            <ul>
+                {% for att in attendances %}
+                    <li>{{ att.name }} - {{ att.date }} {{ att.time }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <a href="{% url 'home' %}">⬅ Back to Home</a>
+    </div>
+
+    <script>
+        let video = document.getElementById("video");
+
+        // ✅ Start Camera
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                alert("Camera access denied!");
+            });
+        }
+
+        // ✅ Capture Image and Send to Backend
+        function captureAndSend() {
+            let canvas = document.getElementById("canvas");
+            let context = canvas.getContext("2d");
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            context.drawImage(video, 0, 0);
+
+            let image = canvas.toDataURL("image/jpeg");
+
+            fetch("/login-face/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: "image=" + encodeURIComponent(image)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "login_success") {
+                    document.getElementById("result").innerText = "Login Successful: Welcome " + data.name + "!";
+                    document.getElementById("result").style.color = "#00ff00";
+                } else {
+                    document.getElementById("result").innerText = "Login Failed: " + data.name;
+                    document.getElementById("result").style.color = "#ff4444";
+                }
+            })
+            .catch(err => {
+                document.getElementById("result").innerText = "Error during login!";
+            });
+        }
+    </script>
+
+</body>
+</html>

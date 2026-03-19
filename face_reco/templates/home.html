@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance System</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            padding: 50px;
+            animation: fadeIn 1.5s ease-in;
+        }
+
+        h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 16px;
+            color: white;
+            background: #ff7b00;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #ff9500;
+            transform: scale(1.05);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        #welcome {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Face Recognition Attendance System</h1>
+
+        <div id="welcome"></div>
+
+        <p>Smart, Fast & Secure Attendance using AI</p>
+
+        <a href="{% url 'register' %}" class="btn" onclick="btnClick()">Register Face</a>
+        <a href="{% url 'login' %}" class="btn" onclick="btnClick()">Login</a>
+        <a href="{% url 'attendance' %}" class="btn" onclick="btnClick()">Mark Attendance</a>
+    </div>
+
+    <div class="footer">
+        © 2026 Your Project | Built with Django & AI
+    </div>
+
+    <script>
+        // ✅ Dynamic Greeting
+        function setGreeting() {
+            let hour = new Date().getHours();
+            let message = "";
+
+            if (hour < 12) message = "Good Morning ☀️";
+            else if (hour < 18) message = "Good Afternoon 🌤️";
+            else message = "Good Evening 🌙";
+
+            document.getElementById("welcome").innerText = message;
+        }
+
+        // ✅ Button Click Effect
+        function btnClick() {
+            console.log("Button clicked!");
+        }
+
+        // ✅ Page Load Animation Trigger
+        window.onload = function() {
+            setGreeting();
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Face</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #141e30, #243b55);
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            margin-top: 80px;
+        }
+
+        h1 {
+            font-size: 35px;
+        }
+
+        input {
+            padding: 10px;
+            width: 250px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            margin: 10px;
+            font-size: 16px;
+            background: #ff7b00;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #ff9500;
+        }
+
+        video {
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #00ffcc;
+        }
+
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            display: block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Register New Face</h1>
+        <p>Capture your face to create dataset</p>
+
+        <input type="text" id="name" placeholder="Enter your name" />
+
+        <br>
+        <button class="btn" onclick="startCamera()">Start Camera</button>
+        <button class="btn" onclick="captureImages()">Capture Faces</button>
+
+        <br>
+        <video id="video" width="400" height="300" autoplay></video>
+
+        <div id="status"></div>
+
+        <a href="{% url 'home' %}">⬅ Back to Home</a>
+    </div>
+
+    <script>
+let video = document.getElementById("video");
+
+// ✅ Get CSRF Token properly (Django fix)
+function getCSRFToken() {
+    let name = "csrftoken=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(name) === 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
+// ✅ Start Camera
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Camera access denied!");
+    });
+}
+
+// ✅ Capture multiple images (FIXED)
+async function captureImages() {
+    let name = document.getElementById("name").value;
+
+    if (!name) {
+        alert("Please enter your name");
+        return;
+    }
+
+    // 🚨 Check camera is ready
+    if (!video.videoWidth || !video.videoHeight) {
+        alert("Camera not started or not ready!");
+        return;
+    }
+
+    let canvas = document.createElement("canvas");
+    let context = canvas.getContext("2d");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    let images = [];
+
+    // ✅ Capture with delay (IMPORTANT)
+    for (let i = 0; i < 5; i++) {
+        context.drawImage(video, 0, 0);
+        let image = canvas.toDataURL("image/jpeg");
+        images.push(image);
+
+        await new Promise(resolve => setTimeout(resolve, 500)); // 0.5 sec delay
+    }
+
+    console.log("Captured images:", images);
+
+    document.getElementById("status").innerText = "Processing...";
+    document.getElementById("status").style.color = "#00ffcc";
+
+    // ✅ Send to backend
+    fetch("/register-face/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()   // ✅ FIXED
+        },
+        body: JSON.stringify({
+            name: name,
+            images: images
+        })
+    })
+    .then(res => {
+        console.log("Response status:", res.status);
+        return res.json();
+    })
+    .then(data => {
+        console.log("Response data:", data);
+
+        if (data.success) {
+            document.getElementById("status").innerText = data.message;
+            document.getElementById("status").style.color = "#00ff00";
+        } else {
+            document.getElementById("status").innerText = data.error || "Unknown error";
+            document.getElementById("status").style.color = "#ff4444";
+        }
+    })
+    .catch(err => {
+        console.error("Fetch error:", err);
+        document.getElementById("status").innerText = "Error occurred!";
+        document.getElementById("status").style.color = "#ff4444";
+    });
+}
+</script>
+       
+
+</body>
+</html>
