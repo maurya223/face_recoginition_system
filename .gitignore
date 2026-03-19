@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+dataset/
+logs/
+*.pkl
+*.csv
+*.txt
+.env
